@@ -78,7 +78,6 @@ def run_task(
             model=args.model,
             trust_remote_code=True,
             use_fast=False,
-            device_map="auto",
             model_kwargs=dict(
                 offload_folder="offload", offload_state_dict=True, **model_kwargs
             ),
