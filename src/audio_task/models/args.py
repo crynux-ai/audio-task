@@ -13,7 +13,6 @@ class AudioGenerationConfig(TypedDict, total=False):
     top_p: float
     temperature: float
     guidance_scale: float
-    extend_stride: float
 
 
 class AudioTaskArgs(BaseModel):
