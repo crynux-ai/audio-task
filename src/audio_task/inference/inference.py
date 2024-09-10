@@ -4,17 +4,20 @@ import logging
 from typing import Literal, cast
 
 import torch
-from audio_task import models
-from audio_task.config import Config
-from audio_task.cache import ModelCache
-from transformers import set_seed, pipeline, Pipeline, TextToAudioPipeline
+from transformers import Pipeline, TextToAudioPipeline, pipeline, set_seed
 
-from .utils import use_deterministic_mode, load_model_kwargs
+from audio_task import models
+from audio_task.cache import ModelCache
+from audio_task.config import Config
+
+from .errors import wrap_error
 from .key import generate_model_key
+from .utils import load_model_kwargs, use_deterministic_mode
 
 _logger = logging.getLogger(__name__)
 
 
+@wrap_error
 def run_task(
     args: models.AudioTaskArgs | None = None,
     *,
@@ -29,15 +32,17 @@ def run_task(
     model_cache: ModelCache[Pipeline] | None = None,
 ):
     if args is None:
-        args = models.AudioTaskArgs.model_validate({
-            "model": model,
-            "prompt": prompt,
-            "duration": duration,
-            "generation_config": generation_config,
-            "seed": seed,
-            "dtype": dtype,
-            "quantize_bits": quantize_bits
-        })
+        args = models.AudioTaskArgs.model_validate(
+            {
+                "model": model,
+                "prompt": prompt,
+                "duration": duration,
+                "generation_config": generation_config,
+                "seed": seed,
+                "dtype": dtype,
+                "quantize_bits": quantize_bits,
+            }
+        )
 
     _logger.info("Task starts")
     _logger.debug(f"task args: {args}")
@@ -65,9 +70,9 @@ def run_task(
             model_kwargs["load_in_4bit"] = True
         elif args.quantize_bits == 8:
             model_kwargs["load_in_8bit"] = True
-        
+
         _logger.debug(f"model kwargs: {model_kwargs}")
-        
+
         pipe = pipeline(
             "text-to-audio",
             model=args.model,
@@ -75,14 +80,12 @@ def run_task(
             use_fast=False,
             device_map="auto",
             model_kwargs=dict(
-                offload_folder="offload",
-                offload_state_dict=True,
-                **model_kwargs
-            )
+                offload_folder="offload", offload_state_dict=True, **model_kwargs
+            ),
         )
         _logger.info("Loading pipeline completes")
         return pipe
-    
+
     key = generate_model_key(args)
 
     if model_cache is not None:
