@@ -12,7 +12,7 @@ from audio_task.config import Config
 
 from .errors import wrap_error
 from .key import generate_model_key
-from .utils import load_model_kwargs, use_deterministic_mode
+from .utils import load_model_kwargs, use_deterministic_mode, get_accelerator
 
 _logger = logging.getLogger(__name__)
 
@@ -73,11 +73,14 @@ def run_task(
 
         _logger.debug(f"model kwargs: {model_kwargs}")
 
+        device = get_accelerator()
+
         pipe = pipeline(
             "text-to-audio",
             model=args.model,
             trust_remote_code=True,
             use_fast=False,
+            device=device,
             model_kwargs=dict(
                 offload_folder="offload", offload_state_dict=True, **model_kwargs
             ),
