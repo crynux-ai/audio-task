@@ -78,11 +78,10 @@ def run_task(
         pipe = pipeline(
             "text-to-audio",
             model=args.model,
-            trust_remote_code=True,
-            use_fast=False,
             device=device,
+            framework="pt",
             model_kwargs=dict(
-                offload_folder="offload", offload_state_dict=True, **model_kwargs
+                **model_kwargs
             ),
         )
         _logger.info("Loading pipeline completes")
