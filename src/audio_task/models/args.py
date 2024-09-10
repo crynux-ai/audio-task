@@ -1,8 +1,8 @@
-from typing import Literal, TypedDict, Optional
+from typing import Literal, Optional
 
 from annotated_types import MinLen
 from pydantic import BaseModel
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 NonEmptyString = Annotated[str, MinLen(1)]
 
