@@ -1,11 +1,32 @@
 from __future__ import annotations
 
 import os
+import platform
 from typing import Any, Dict
 
 import torch
 
 from audio_task.config import Config, get_config
+
+
+def get_accelerator():
+    if platform.system() == "Darwin":
+        try:
+            import torch.mps
+
+            return "mps"
+        except ImportError:
+            pass
+
+    try:
+        import torch.cuda
+
+        if torch.cuda.is_available():
+            return "cuda"
+    except ImportError:
+        pass
+
+    return "cpu"
 
 
 def load_model_kwargs(config: Config | None = None) -> Dict[str, Any]:
