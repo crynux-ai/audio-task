@@ -105,7 +105,6 @@ def run_task(
         "top_p": 0.0,
         "temperature": 1.0,
         "guidance_scale": 3,
-        "extend_stride": 18,
     }
 
     if args.generation_config is not None:
