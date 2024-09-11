@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import random
 from typing import Literal, cast
 
 import torch
@@ -23,20 +24,21 @@ def run_task(
     *,
     model: str | None = None,
     prompt: str | None = None,
-    duration: float = 30,
     generation_config: models.AudioGenerationConfig | None = None,
-    seed: int = 0,
+    seed: int = -1,
     dtype: Literal["float16", "bfloat16", "float32", "auto"] = "auto",
     quantize_bits: Literal[4, 8] | None = None,
     config: Config | None = None,
     model_cache: ModelCache[Pipeline] | None = None,
 ):
+    if seed == -1:
+        seed = random.randint(1, 2 ** 32 - 1)
+
     if args is None:
         args = models.AudioTaskArgs.model_validate(
             {
                 "model": model,
                 "prompt": prompt,
-                "duration": duration,
                 "generation_config": generation_config,
                 "seed": seed,
                 "dtype": dtype,
@@ -80,6 +82,8 @@ def run_task(
             model=args.model,
             device=device,
             framework="pt",
+            use_fast=False,
+            trust_remote_code=True,
             model_kwargs=dict(
                 **model_kwargs
             ),
@@ -95,26 +99,17 @@ def run_task(
         pipe = load_model()
 
     pipe = cast(TextToAudioPipeline, pipe)
-    sr = pipe.sampling_rate
-    assert sr is not None
-
-    max_length = int(args.duration * sr)
-
-    generate_kwargs = {
-        "max_length": max_length,
-        "do_sample": True,
-        "top_k": 250,
-        "top_p": 0.0,
-        "temperature": 1.0,
-        "guidance_scale": 3,
-    }
+    generate_kwargs = {}
 
     if args.generation_config is not None:
         for k, v in args.generation_config.items():
             if v is not None:
                 generate_kwargs[k] = v
 
-    output = pipe(args.prompt, forward_params=generate_kwargs)
+    if pipe.model.can_generate():
+        output = pipe(args.prompt, generate_kwargs=generate_kwargs)
+    else:
+        output = pipe(args.prompt)
     assert isinstance(output, dict)
 
     audio = output["audio"]
