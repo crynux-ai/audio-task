@@ -115,4 +115,8 @@ def run_task(
     audio = output["audio"]
     sr = output["sampling_rate"]
 
+    assert audio.ndim == 3
+    assert audio.shape[0] == 1
+    audio = audio[0].transpose(1, 0)
+
     return audio, sr
