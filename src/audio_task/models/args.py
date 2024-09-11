@@ -8,6 +8,7 @@ NonEmptyString = Annotated[str, MinLen(1)]
 
 
 class AudioGenerationConfig(TypedDict, total=False):
+    max_new_tokens: int
     do_sample: bool
     top_k: int
     top_p: float
@@ -19,7 +20,6 @@ class AudioTaskArgs(BaseModel):
     model: NonEmptyString
     prompt: str
 
-    duration: float = 30
     generation_config: Optional[AudioGenerationConfig] = None
 
     seed: int = 0
