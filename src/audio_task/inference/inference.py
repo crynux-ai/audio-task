@@ -19,6 +19,7 @@ _logger = logging.getLogger(__name__)
 
 
 @wrap_error
+@torch.no_grad
 def run_task(
     args: models.AudioTaskArgs | None = None,
     *,
@@ -66,8 +67,7 @@ def run_task(
 
         model_kwargs = load_model_kwargs(config=config)
 
-        if args.quantize_bits is None:
-            model_kwargs["torch_dtype"] = torch_dtype
+        model_kwargs["torch_dtype"] = torch_dtype
         if args.quantize_bits == 4:
             model_kwargs["load_in_4bit"] = True
         elif args.quantize_bits == 8:
@@ -75,7 +75,9 @@ def run_task(
 
         _logger.debug(f"model kwargs: {model_kwargs}")
 
-        device = get_accelerator()
+        device = None
+        if args.quantize_bits is None:
+            device = get_accelerator()
 
         pipe = pipeline(
             "text-to-audio",
@@ -85,6 +87,8 @@ def run_task(
             use_fast=False,
             trust_remote_code=True,
             model_kwargs=dict(
+                offload_folder="offload",
+                offload_state_dict=True,
                 **model_kwargs
             ),
         )
